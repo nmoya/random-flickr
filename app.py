@@ -31,13 +31,16 @@ def main():
     print "Downloading [%d of %d]" % (config["number_of_photos"],
                                       config["number_of_photos"])
 
-    for i in range(config["number_of_photos"]):
-        THREADS[i].join()
+    if len(image_urls) > 0:
+        for i in range(config["number_of_photos"]):
+            THREADS[i].join()
 
-    print "Done!"
-    print "Run: /System/Library/Frameworks/ScreenSaver.framework/Resources/"\
-        "ScreenSaverEngine.app/Contents/MacOS/ScreenSaverEngine -background"
-
+        print "Done!"
+        print "Run: /System/Library/Frameworks/ScreenSaver.framework/"\
+            "Resources/ScreenSaverEngine.app/Contents/MacOS/"\
+            "ScreenSaverEngine -background"
+    else:
+        print "You need to insert your own user_id in the config.json file"
 
 ########################## METHODS ################################
 
