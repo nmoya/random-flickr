@@ -3,7 +3,7 @@ random-flickr
 
 Using the Python FlickrAPI (made by Sybren Stüvel), this script randomly downloads a specified amount of photos among all photos on your Flickr account. 
 This was made for the purpose of setting your screensaver as your wallpaper in MacOS. Since some screensavers allow an image folder as input, you could have a sliding tiles from your Flickr photos as your desktop wallpaper.
-- Example: https://www.youtube.com/watch?v=bclf7j5ofkM
+- Example: https://www.youtube.com/watch?v=Y19k92YCs0g
 
 ## Requirements
 - Python 2.*
