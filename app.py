@@ -1,14 +1,45 @@
+#!/usr/bin/python
 import flickrapi
 import urllib
 import urllib2
 import json
 import random
-import info  # Simple file with 2 variables. APPKEY and APPSECRET
 import os
 import glob
 import threading
 
-# Documentation: http://stuvel.eu/media/flickrapi-docs/documentation/
+
+def main():
+    config = load_config("config.json")
+    flickr = flickrapi.FlickrAPI(config["APPKEY"], format='etree')
+    total_photos = count_user_photos(flickr, config["user_id"])
+
+    print "Loading image urls... "
+    image_urls = load_local_image_urls(flickr, config["user_id"], total_photos)
+
+    print "Cleaning app folder", config["app_folder"]
+    clean_folder(config["app_folder"])
+
+    print "Shuffling..."
+    random.shuffle(image_urls)
+
+    THREADS = []
+    print "Downloading to dynamic desktop folder..."
+    for i, url in enumerate(image_urls[:config["number_of_photos"]]):
+        THREADS.append(DownloadImage(i, config["app_folder"], url))
+        THREADS[-1].start()
+    print "Downloading [%d of %d]" % (config["number_of_photos"],
+                                      config["number_of_photos"])
+
+    for i in range(config["number_of_photos"]):
+        THREADS[i].join()
+
+    print "Done!"
+    print "Run: /System/Library/Frameworks/ScreenSaver.framework/Resources/"\
+        "ScreenSaverEngine.app/Contents/MacOS/ScreenSaverEngine -background"
+
+
+########################## METHODS ################################
 
 
 class DownloadImage(threading.Thread):
@@ -55,6 +86,7 @@ def load_remote_image_urls(flickr_obj, user_id, total_images):
             counter += 1
             print "Done: [%d of %d]" % (counter, total_images)
     save_local_image_urls(user_id, url_list)
+    print "Don't worry, this step is only required in the first execution"
     return url_list
 
 
@@ -83,38 +115,26 @@ def clean_folder(folder):
         folder = folder + "/"
     files = glob.glob(folder+"*")
     for f in files:
+        if not f.endswith("jpg"):
+            print "[WARNING] Your app folder contains other files."\
+                "Please chose an empty folder because content will be erased"
+            sys.exit(1)
+    for f in files:
         os.remove(f)
 
 
-def main():
-    user_id = "70997575@N03"  # Find out yours in: http://idgettr.com/
-    dynamic_desktop_folder = "/Users/nmoya/Pictures/DynamicDesktop/"
-    total_photos = 0
-    number_of_photos = 30
-    flickr = flickrapi.FlickrAPI(info.APPKEY, format='etree')
-    total_photos = count_user_photos(flickr, user_id)
+def load_config(config_file):
+    try:
+        arq = open(config_file)
+        content = arq.read()
+        arq.close()
+        config = json.loads(content)
+        config["number_of_photos"] = int(config["number_of_photos"])
+        return config
+    except IOError:
+        print "Please rename config-example.json to config.json"\
+            "and insert an APPKEY"
+        sys.exit(1)
 
-    print "Loading image urls... "
-    image_urls = load_local_image_urls(flickr, user_id, total_photos)
-
-    print "Cleaning app folder", dynamic_desktop_folder
-    clean_folder(dynamic_desktop_folder)
-
-    print "Shuffling..."
-    random.shuffle(image_urls)
-
-    THREADS = []
-    print "Downloading to dynamic desktop folder..."
-    for i, url in enumerate(image_urls[:number_of_photos]):
-        THREADS.append(DownloadImage(i, dynamic_desktop_folder, url))
-        THREADS[-1].start()
-    print "Downloading [%d of %d]" % (number_of_photos, number_of_photos)
-
-    for i in range(number_of_photos):
-        THREADS[i].join()
-
-    print "Done!"
-    print "Run: /System/Library/Frameworks/ScreenSaver.framework/Resources/"\
-        "ScreenSaverEngine.app/Contents/MacOS/ScreenSaverEngine -background"
-
-main()
+if __name__ == "__main__":
+    main()
